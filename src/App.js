@@ -56,10 +56,15 @@ const KEY = "f84fc31d";
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
+  const [watched, setWatched] = useState(function () {
+    const watchedList = JSON.parse(localStorage.getItem("watched"));
+    return watchedList;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen1, setIsOpen1] = useState(true);
 
   /*
   useEffect(function () {
@@ -82,6 +87,7 @@ export default function App() {
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
+    setIsOpen1(true);
   }
 
   function handleCloseMovie() {
@@ -95,6 +101,12 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
+  useEffect(
+    function () {
+      localStorage.setItem("watched", JSON.stringify(watched));
+    },
+    [watched]
+  );
 
   useEffect(
     function () {
@@ -147,12 +159,12 @@ export default function App() {
   return (
     <>
       <NavBar>
-        <Search query={query} setQuery={setQuery} />
+        <Search onSetIsOpen={setIsOpen} query={query} setQuery={setQuery} />
         <NumResults movies={movies} />
       </NavBar>
 
       <Main>
-        <Box>
+        <Box isOpen={isOpen} onSetIsOpen={setIsOpen}>
           {/* {isLoading ? <Loader /> : <MovieList movies={movies} />} */}
           {isLoading && <Loader />}
           {!isLoading && !error && (
@@ -161,7 +173,7 @@ export default function App() {
           {error && <ErrorMessage message={error} />}
         </Box>
 
-        <Box>
+        <Box isOpen={isOpen1} onSetIsOpen={setIsOpen1}>
           {selectedId ? (
             <MovieDetails
               selectedId={selectedId}
@@ -214,14 +226,17 @@ function Logo() {
   );
 }
 
-function Search({ query, setQuery }) {
+function Search({ query, setQuery, onSetIsOpen }) {
   return (
     <input
       className="search"
       type="text"
       placeholder="Search movies..."
       value={query}
-      onChange={(e) => setQuery(e.target.value)}
+      onChange={(e) => {
+        onSetIsOpen(true);
+        setQuery(e.target.value);
+      }}
     />
   );
 }
@@ -238,12 +253,13 @@ function Main({ children }) {
   return <main className="main">{children}</main>;
 }
 
-function Box({ children }) {
-  const [isOpen, setIsOpen] = useState(true);
-
+function Box({ children, isOpen, onSetIsOpen }) {
   return (
     <div className="box">
-      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
+      <button
+        className="btn-toggle"
+        onClick={() => onSetIsOpen((open) => !open)}
+      >
         {isOpen ? "–" : "+"}
       </button>
 
